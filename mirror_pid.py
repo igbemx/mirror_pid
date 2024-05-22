@@ -1,3 +1,12 @@
+"""
+File: mirror_pid.py
+
+Camera image based mirror PID regulator.
+
+Author: Igor Beinik
+Date: 2024-05-22
+"""
+
 import sys
 import time
 import cv2
