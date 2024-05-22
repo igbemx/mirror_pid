@@ -1,0 +1,39 @@
+# Build files
+*.pyc
+*.so
+*.dll
+build/
+dist/
+eggs/
+parts/
+venv/
+
+# IDE files
+.idea/
+.vscode/
+
+# Text editor backups
+*.bak
+*.swp
+
+# OS specific files
+.DS_Store
+
+# Temporary qt designer files
+*.ui
+
+# Testing files
+__pycache__/
+*.pyt
+
+# Local configuration files
+.env
+
+# Coverage reports
+.coverage
+
+# Requirements files
+requirements.txt
+
+# Misc
+popup.py
