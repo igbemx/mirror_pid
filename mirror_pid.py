@@ -159,12 +159,12 @@ class PIDController:
 
 
 class MainWidget(QMainWindow):
-    def __init__(self, stream_url=None):
+    def __init__(self, stream_url=None, mirror_motor=None):
         super(MainWidget, self).__init__()
 
         self.stream_url = stream_url
         self.frame_queue = queue.Queue(maxsize=1)
-        self.mirror_alias = 'a_m3_pitch'
+        self.mirror_alias = mirror_motor
         self.gray_frame = None
         self.source1_mean = None
         self.source2_mean = None
@@ -294,9 +294,14 @@ class MainWidget(QMainWindow):
 
         self.video_capture = cv2.VideoCapture(self.stream_url)
         self.video_thread = threading.Thread(target=self.camera_thread, args=(self.video_capture, self.frame_queue), daemon=True).start()
-        self.mirror = tango.DeviceProxy(self.mirror_alias)
-        self.mirror_init_pos = self.mirror.position
-
+        try:
+            self.mirror = tango.DeviceProxy(self.mirror_alias)
+            self.mirror_init_pos = self.mirror.position
+            print("Initial mirror position: ", self.mirror_init_pos)
+        except tango.DevFailed as e:
+            print("Error in Tango device connection: ", e)
+            self.mirror = None
+        
         self.pid = PIDController(P=0.180, I=0.001, D=0.0, setpoint=self.mirror_setp)
         self.pid.setSampleTime(self.update_rate*0.0005)  # 50 of the update time in seconds
 
@@ -427,7 +432,11 @@ class MainWidget(QMainWindow):
 
     def get_feedback_offset(self):
         first_sensor_pos = self.source1_mean
-        first_mirror_pos = self.mirror.position
+        if self.mirror:
+            first_mirror_pos = self.mirror.position
+        else:
+            print('Could not obtain the initial mirror position..')
+            first_mirror_pos = None
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Information)
         msg_box.setWindowTitle('Mirror move request!')
@@ -513,13 +522,15 @@ class MainWidget(QMainWindow):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 2:
         stream_url = sys.argv[1]
+        mirror_motor = sys.argv[2]
     else:
-        print("No stream URL provided. Using the default URL: http://b-softimax-rpi-1:5000/stream")
+        print("Not enough arguments provided. Using the default URL: http://b-softimax-rpi-1:5000/stream")
         stream_url = "http://b-softimax-rpi-1:5000/stream"
+        mirror_motor = "a_m3_pitch"
 
-    cbmr_app = MainWidget()
+    cbmr_app = MainWidget(stream_url, mirror_motor)
     cbmr_app.setWindowTitle("Camera Based Mirror Regulator")
     cbmr_app.resize(1200, 1000)
     cbmr_app.show()
